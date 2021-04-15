@@ -78,7 +78,7 @@ CREATE TABLE tenant(
 
 
 CREATE TABLE new_audit(
-    --resolve_status boolean null,
+
     Audit_ID serial PRIMARY KEY,
     aud_score integer,
     date_record date, 
@@ -90,7 +90,9 @@ CREATE TABLE new_audit(
         ON DELETE CASCADE,
     tenant_id integer references tenant,
     staff_id integer references staff,
-    noncompliances json
+
+    noncompliances json,
+    update_date date
 );
 
 -- contains each and every checklist id that is passed here
@@ -115,7 +117,8 @@ CREATE TABLE audit_in_progress(
      audit_id integer references new_audit
      ON DELETE CASCADE,
      tenant_id integer references tenant
-     ON DELETE CASCADE
+     ON DELETE CASCADE,
+     institution_id integer references singhealth_institutions
 );
 
 CREATE TABLE past_audits(
@@ -125,7 +128,9 @@ CREATE TABLE past_audits(
     tenant_id integer references tenant
     ON DELETE CASCADE,
     audit_date date,
-    updates json not null               
+    staff_id integer references staff,
+    resolved_audit_date date,
+    institution_id integer references singhealth_institutions
 );
 
 --storage of the image in the blob format

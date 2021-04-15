@@ -55,8 +55,7 @@ CREATE TABLE staff(
       FOREIGN KEY(institution_id)
           REFERENCES singhealth_institutions(institution_id)
           ON DELETE CASCADE,
-    password varchar(100),
-    token text
+    password varchar(100)
 );
 
 -- On registration
@@ -74,12 +73,12 @@ CREATE TABLE tenant(
     expiry_date date,
     password varchar(100),
     store_name text unique,
-    institution_id integer references singhealth_institutions,
-    token text
+    institution_id integer references singhealth_institutions
 );
 
 
 CREATE TABLE new_audit(
+
     Audit_ID serial PRIMARY KEY,
     aud_score integer,
     date_record date, 
@@ -91,6 +90,7 @@ CREATE TABLE new_audit(
         ON DELETE CASCADE,
     tenant_id integer references tenant,
     staff_id integer references staff,
+
     noncompliances json,
     update_date date
 );
@@ -108,6 +108,7 @@ CREATE TABLE checklist(
 );
 
 CREATE TABLE audit_in_progress(
+    aud_in_prog_id serial primary key,
      audit_date date,
      aud_score integer,
      noncompliances json not null,

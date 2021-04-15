@@ -48,8 +48,8 @@ const createTenant = async (req,res)=>{
       }
       const hashedPassword = validate.hashPassword(req.body.password);
       //query to insert tenant on success
-      const createTenantQuery = `INSERT INTO tenant(tenant_name,category_ID, store_des,email, expiry_date,password,store_name,institution_id)
-                                values($1, $2, $3, $4, $5, $6, $7, $8) returning *`
+      const createTenantQuery = `INSERT INTO tenant(tenant_name,category_ID, store_des,email, expiry_date,password,institution_id)
+                                values($1, $2, $3, $4, $5, $6, $7) returning *`
       
       // need to return category ID
 
@@ -72,7 +72,6 @@ const createTenant = async (req,res)=>{
         req.body.email,
         req.body.expiry_date,
         hashedPassword,
-        req.body.store_name,
         instid
       ]
       console.log('query selected successfully')
@@ -155,7 +154,7 @@ const signinTenant = async (req, res) => {
     const body = {
       id: dbResponse.tenant_id,
       email: dbResponse.email,
-      category_id: dbResponse.category_id,
+      category_id: dbResponse.category_ID,
       institution_id: dbResponse.institution_id
     }
 

@@ -2,24 +2,42 @@
 // THIS FILE IS FOR STAFF ONLY 
 
 const stats = require('../helpers/status')
-const pool = require("../config/database")
+const pool = require("../config/database").pool
 //import the staff and tenant check 
-const checkStaffTenant = require('../helpers/checkstaffTenant')
-const fs = require('fs')
+//const checkStaffTenant = require('../helpers/checkstaffTenant')
+
 
 // for the staff route only
 
 //1. create audit 
 
-//need tenant name, 
 const createAudit = async(req,res)=>{
     console.log(`${req.body}`)
-    checkStaffTenant(req)
+    const signinStaffQuery = 'SELECT * FROM staff WHERE email = $1';
+    const signinTenantQuery = 'SELECT * FROM tenant WHERE email = $1';
+    const categoryQuery = 'SELECT category_ID from category where category_name = $1'
+    //verify the staff accessing the login 
+    const {rows} = await pool.query(signinStaffQuery,[req.body.staff_email])
+    const tenantIn = await pool.query(signinTenantQuery,[req.body.tenant_email])
+    //get the category 
+    const categoryRetrieve = await pool.query(categoryQuery,[req.body.type])
+    if (!rows[0] && !tenantIn[0]){
+        return res.status(stats.status.notfound).send('Unable to create as tenant and staff are not found')
+    }
+
+    //check for both tenant and staff to be under the same institute 
+    else if(!(rows[0].institution_id === tenantIn[0].institution_id)){
+        return res.status(stats.status.conflict).send("Both staff and tenant are not in the same institute")
+    }
+
+    //check if the tenant category also agrees with the category that is passed
+    else if(!(tenantIn[0].category_id === categoryRetrieve[0].category_id)){
+        return res.status(stats.status.bad).send("tenant is not in the correct category")
+    }
     //new audit insert 
     const crNewAuditQuery = 'INSERT INTO new_audit (aud_score,date_record,inst_id,category_ID,tenant_id,staff_id,noncompliances) values ($1, $2,$3,$4,$5,$6,$7) RETURNING *'
-
     try{
-    const crNewAudit = await pool.query(crNewAuditQuery,[req.body.performancescore,req.body.date,rows[0].institution_id,rows[0].category_id,tenantIn[0].tenant_id,rows[0].staff_id,req.body.noncomplainces])
+    const crNewAudit = await pool.query(crNewAuditQuery,[req.body.performancescore,req.body.date,rows[0].institution_id,rows[0].category_id,tenantIn[0].tenant_id,rows[0].staff_id,req.body.non_compliances])
 
     //insert properly check 
     stats.successMessage.data = crNewAudit
@@ -31,9 +49,32 @@ const createAudit = async(req,res)=>{
         return res.status(stats.status.error).send(stats.errorMessage)
     }
 }
+//get non-comp when pressing button to view audit itself, front end to save
+const getNonCompliance = async(req,res)=>{
+    const tenant_id = await pool.query('select tenant_id from tenant where email = $1',[req.body.tenant_email])[0].tenant_id
+    const staff_id = await pool.query('select staff_id from staff where email = $1',[req.body.staff_email])[0].staff_id
+    const noncomp = await pool.query('select noncompliances from new_audit where tenant_id = $1 and staff_id = $2',[tenant_id,staff_id])[0].noncompliances
+    if(!tenant_id||staff_id){
+        return res.status(stats.status.bad).send("Tenant or staff not in the database");
+    }
+    return res.status(stats.status.success).send(noncomp)
+}
 
+//retrieve tenant email is the front end daichi
 const ViewuncompletedAudits = async(req,res)=>{
-    checkStaffTenant(req)
+    const signinStaffQuery = 'SELECT * FROM staff WHERE email = $1';
+    const signinTenantQuery = 'SELECT * FROM tenant WHERE email = $1';
+    //const categoryQuery = 'SELECT category_ID from category where category_name = $1'
+    //verify the staff accessing the login 
+    const {rows} = await pool.query(signinStaffQuery,[req.body.staff_email])
+    const tenantIn = await pool.query(signinTenantQuery,[req.body.tenant_email])
+    //get the category 
+
+    //check for both tenant and staff to be under the same institute 
+    if(!(rows[0].institution_id === tenantIn[0].institution_id)){
+        return res.status(stats.status.conflict).send("Both staff and tenant are not in the same institute")
+    }
+
     const queryStaffID = 'select * from staff where email = $1'
     const queryGetAud = 'SELECT * from new_audit where staff_id = $1'
     //json object
@@ -60,7 +101,7 @@ const ViewuncompletedAudits = async(req,res)=>{
                 "performance_score ": getaud[i].aud_score
             }
         }
-        return res.status(stats.status.successMessage).send(allAudits);
+        return res.status(stats.status.successMessage).json(allAudits);
     }
     catch(err){
         return res.status(stats.error).send("Error retrieving from the tenant or staff")
@@ -82,6 +123,7 @@ const viewtenantUpdates = async(req,res)=>{
 
 //3.update audits (update the audits table)
 //if there are audits to update 
+//not all compliances are resolved
 const updateAudit = async(req,res)=>{
     //update the table with the new json
     const dbResponse = await pool.query('update new_audit set noncompliances = $1, update_date = $2 returning *',[req.body.noncompliances,req.body.update_date]);
@@ -104,7 +146,8 @@ const pastAudits = async (req,res)=>{
     const startaud_date = await pool.query('select date_record from new_audit where staff_id = $1',[staff_id])[0]
     const getPastAud = await pool.query('select * from past_audits where staff_id = $1',[staff_id])
     var returnbody = {
-        "staff_name": staff_id.staff_name
+        "staff_name": staff_id.staff_name,
+
     }
 
     //get length of the table
@@ -121,13 +164,13 @@ const pastAudits = async (req,res)=>{
             "start_audit_date": getPastAud[i].audit_date            
         }
     }
-    return res.status(stats.status.success).send(returnbody)
+    return res.status(stats.status.success).json(returnbody)
 
 
 }
 
 //5. resolve audits (send via email)
-//only if all the audits have passed
+//only if all the non compliances are resolved
 const resolveAudits = async (req,res)=>{
     //insert into past audits 
     //delete from new audits 
@@ -140,7 +183,8 @@ const resolveAudits = async (req,res)=>{
     return res.status(stats.status.success).send(stats.successMessage)
 }
 
-//delete route
+//only if all noncompliances are resolved
+//delete all resolved audits
 const delNewAudits = async(req,res)=>{
     const getStaff = await pool.query('select staff_id from staff where email = $1',[req.body.staff_email])
     const getTenant = await pool.query('select tenant_id from tenant where email = $1',[req.body.tenant_email])
@@ -169,8 +213,10 @@ const getTenantDeets = async(req,res)=>{
             "previous_audit_date": getaudit1[i].resolved_audit_date
         }
     }
-    return res.status(stats.status.success).send(tenantdeets)
+    return res.status(stats.status.success).json(tenantdeets)
 }
+
+//dashboard
 
 
 module.exports = {
@@ -181,5 +227,6 @@ module.exports = {
     ViewuncompletedAudits,
     createAudit,
     getTenantDeets,
-    delNewAudits
+    delNewAudits,
+    getNonCompliance
 }

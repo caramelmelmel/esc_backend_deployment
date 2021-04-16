@@ -5,22 +5,14 @@ const dbQuery = require('../database/dev/dbQuery')
 
 const validate = require('../helpers/validations');
 const stats = require('../helpers/status')
-const poolconfig = require('../config/database').pool;
 const jwt = require('jsonwebtoken')
 const cookieparser = require('cookie-parser');
 
 require('dotenv').config();
 
+
 //use the pg pool library 
-const {Pool,Client} = require('pg');
-const pool = new Pool({
-  user: process.env.PGUSER,
-	host: process.env.PGHOST,
-	database: process.env.PGDATABASE,
-	password: process.env.PGPASSWORD,
-	port: process.env.PGPORT,
-	ssl: false
-});
+const pool = require('../config/database').pool
 
 //create query function here
 
@@ -35,7 +27,7 @@ const createStaff = async (req,res)=>{
 
     const created_on = moment(new Date());
 
-    if (validate.isEmpty(req.body.email) || validate.isEmpty(req.body.staff_name) || validate.isEmpty(req.body.password) || validate.isEmpty(req.body.email)||validate.isEmpty(req.body.institution_name)) {
+    if (validate.isEmpty(req.body.email) || validate.isEmpty(req.body.staff_name) || validate.isEmpty(req.body.password) || validate.isEmpty(req.body.institution_name)) {
         stats.errorMessage.error = 'All the fields must be filled in';
         return res.status(stats.status.bad).send(stats.errorMessage);
       }
@@ -49,8 +41,7 @@ const createStaff = async (req,res)=>{
       }
       const hashedPassword = validate.hashPassword(req.body.password);
       //query to insert tenant on success
-      const createStaffQuery = `insert into staff (staff_name, email,institution_id,password)
-                                values($1, $2, $3, $4) returning *`
+      const createStaffQuery = 'insert into staff (staff_name, email,institution_id,password) values($1, $2, $3, $4) returning *'
       
       // need to return category ID
 
@@ -140,7 +131,7 @@ const signinStaff = async (req, res) => {
     delete dbResponse.password;
     stats.successMessage.data = dbResponse;
     stats.successMessage.data.token = token;
-    return res.header('x-auth-token',token).send(stats.successMessage.data.token);
+    return res.send(token);
   } catch (error) {
     errorMessage.error = 'Operation was not successful';
     return res.status(stats.status.error).send(stats.errorMessage);

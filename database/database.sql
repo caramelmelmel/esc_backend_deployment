@@ -70,9 +70,8 @@ CREATE TABLE tenant(
         REFERENCES category(category_ID)
         ON DELETE CASCADE
     , 
-    expiry_date date,
+    exp_date date,
     password varchar(100),
-    store_name text unique,
     institution_id integer references singhealth_institutions
 );
 

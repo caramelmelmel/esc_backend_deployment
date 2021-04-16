@@ -27,7 +27,7 @@ async function validateToken(token,secret){
 
 //for staff
 const verifyStaff = async (req, res, next) => {
-  const token  = req.header('x-auth-token');
+  const token  = req.body.token;
 
   if (!token) {
     stats.errorMessage.error = 'Token not provided';
@@ -46,7 +46,7 @@ const verifyStaff = async (req, res, next) => {
 
 //for tenant 
 const verifyTenant = async (req, res, next) => {
-  const token  = req.header('x-auth-token');
+  const token  = req.body.token
 
   if (!token) {
     stats.errorMessage.error = 'Token not provided';
@@ -54,7 +54,8 @@ const verifyTenant = async (req, res, next) => {
   }
 
   try {
-    jwt.verify(token, process.env.TENANT_TOKEN_SECRET);
+    const verify_tenant = jwt.verify(token, process.env.TENANT_TOKEN_SECRET);
+    console.log(`${verify_tenant}`)    
     next();
 
   } catch (error) {

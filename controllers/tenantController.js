@@ -5,19 +5,12 @@ const dbQuery = require('../database/dev/dbQuery')
 
 const validate = require('../helpers/validations');
 const stats = require('../helpers/status')
-const poolconfig = require('../config/database').pool;
 const jwt = require('jsonwebtoken')
 
 require('dotenv').config();
 
 //use the pg pool library 
-const {Pool,Client} = require('pg');
-const pool = new Pool({
-  connectionString: process.env.HEROKU_POSTGRESQL_MAROON_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
-});
+const pool = require('../config/database').pool
 
 //create query function here
 
@@ -164,7 +157,8 @@ const signinTenant = async (req, res) => {
     delete dbResponse.password;
     stats.successMessage.data = dbResponse;
     stats.successMessage.data.token = token;
-    return res.header('x-auth-token',token).send(stats.successMessage.data);
+    return res.send(token);
+    
   } catch (error) {
     stats.errorMessage.error = 'Operation was not successful';
     return res.status(stats.status.error).send(stats.errorMessage);

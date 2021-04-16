@@ -9,7 +9,7 @@ const pool = new Pool(
     }
 )
 
-const checkStaffTenant = (req) =>{
+const checkStaffTenant = (req,res) =>{
     const signinStaffQuery = 'SELECT * FROM staff WHERE email = $1';
     const signinTenantQuery = 'SELECT * FROM tenant WHERE email = $1';
     const categoryQuery = 'SELECT category_ID from category where category_name = $1'

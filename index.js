@@ -1,3 +1,9 @@
+if(process.env.NODE_ENV !== "production"){
+  require('dotenv').config();
+}
+
+var createError = require("http-errors");
+
 const helmet = require('helmet')
 const compression = require('compression')
 const rateLimit = require('express-rate-limit')
@@ -7,7 +13,6 @@ const bodyParser = require("body-parser");
 const cors = require('cors');
 const dotenv = require('dotenv')
 const port = 3000;
-const PORT = process.env.PORT || 5000
 
 const app = express()
 //const pool = require('../.config/database')
@@ -51,11 +56,29 @@ console.log('successfully imported routes')
 app.use(compression())
 app.use(helmet())
 
-
-if(process.env.NODE_ENV==="production"){
-app.listen(PORT, () => {
-    console.log(`Example app listening at ${port}`)
+if(process.env.NODE_ENV === "production"){
+  const PORT = process.env.PORT || 8080;
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}.`);
   })
 }
+
+// catch 404 and forward to error handler
+app.use(function (req, res, next) {
+  next(createError(404));
+});
+
+// error handler
+
+app.use(function (err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get("env") === "development" ? err : {};
+
+  // render the error page
+  res.status(err.status || 500);
+  res.json({ error: err });
+});
+
   
 

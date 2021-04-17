@@ -1,5 +1,5 @@
 //a fn to query from the pg database 
-const pool = require('../config/database').pool
+const pool = require('../config/database')
   /**
    * DB Query
    * @param {object} req

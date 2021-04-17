@@ -1,7 +1,6 @@
 const moment = require('moment');
 
-//import dbQuery from '../db/dev/dbQuery';
-const dbQuery = require('../database/dev/dbQuery')
+//const dbQuery = require('../database/dev/dbQuery')
 
 const validate = require('../helpers/validations');
 const stats = require('../helpers/status')
@@ -12,7 +11,7 @@ require('dotenv').config();
 
 
 //use the pg pool library 
-const pool = require('../config/database').pool
+const pool = require('../config/database')
 
 //create query function here
 
@@ -61,7 +60,7 @@ const createStaff = async (req,res)=>{
 
       try {
         console.log('inserting values')
-        const { rows } = await dbQuery.query(createStaffQuery, values)
+        const { rows } = await pool.query(createStaffQuery, values)
         console.log('There is db response')
         const dbResponse = rows[0];
         delete dbResponse.password;

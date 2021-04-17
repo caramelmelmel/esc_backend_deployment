@@ -1,16 +1,15 @@
 const moment = require('moment');
-
-//import dbQuery from '../db/dev/dbQuery';
-const dbQuery = require('../database/dev/dbQuery')
-
+const pool = require('../config/database')
+console.log('imported pool successfully')
+//const dbQuery = require('../database/dev/dbQuery')
+console.log('dbQuery has no import errors')
 const validate = require('../helpers/validations');
 const stats = require('../helpers/status')
 const jwt = require('jsonwebtoken')
-
+console.log('imported everything in tenant cont successfully')
 require('dotenv').config();
 
 //use the pg pool library 
-const pool = require('../config/database').pool
 
 //create query function here
 
@@ -78,7 +77,7 @@ const createTenant = async (req,res)=>{
         }
 
         console.log('inserting values')
-        const { rows } = await dbQuery.query(createTenantQuery, values)
+        const { rows } = await pool.query(createTenantQuery, values)
         console.log('There is db response')
 
         const dbResponse = rows[0];

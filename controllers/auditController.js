@@ -2,7 +2,7 @@
 // THIS FILE IS FOR STAFF ONLY 
 
 const stats = require('../helpers/status')
-const pool = require('../config/database').pool
+const pool = require('../config/database')
 //import the staff and tenant check 
 //const checkStaffTenant = require('../helpers/checkstaffTenant')
 

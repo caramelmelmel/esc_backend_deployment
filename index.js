@@ -56,12 +56,15 @@ console.log('successfully imported routes')
 app.use(compression())
 app.use(helmet())
 
-if(process.env.NODE_ENV === "production"){
-  const PORT = process.env.PORT || 8080;
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}.`);
-  })
-}
+
+/*if(process.env.NODE_ENV === "production"){
+
+} */
+
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}.`);
+})
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

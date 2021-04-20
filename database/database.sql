@@ -72,7 +72,8 @@ CREATE TABLE tenant(
     , 
     exp_date date,
     password varchar(100),
-    institution_id integer references singhealth_institutions
+    institution_id integer references singhealth_institutions,
+    store_name text unique
 );
 
 
@@ -171,7 +172,7 @@ CREATE TABLE resolve_compliance(
 );
 
 --INSERT commands for the hardcoded ones
-INSERT INTO category(category_name) values('FB'),('Non_FB');
+INSERT INTO category(category_name) values('F&B'),('Non-F&B');
 
 -- set the category at the backend if category = 1, then add to checklist 
 -- else non fb

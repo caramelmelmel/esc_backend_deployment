@@ -14,24 +14,25 @@ const pool = require('../config/database')
 const createAudit = async(req,res)=>{
     console.log(`${req.body}`)
     const signinStaffQuery = 'SELECT * FROM staff WHERE email = $1';
-    const signinTenantQuery = 'SELECT * FROM tenant WHERE email = $1';
+    const signinTenantQuery = 'SELECT * FROM tenant WHERE store_name = $1';
     const categoryQuery = 'SELECT category_ID from category where category_name = $1'
     //verify the staff accessing the login 
     const {rows} = await pool.query(signinStaffQuery,[req.body.staff_email])
-    const tenantIn = await pool.query(signinTenantQuery,[req.body.tenant_email])
+    const tenantIn = await pool.query(signinTenantQuery,[req.body.store_name])
     //get the category 
-    const categoryRetrieve = await pool.query(categoryQuery,[req.body.type])
-    if (!rows[0] && !tenantIn[0]){
+    const categoryRetrieve = await pool.query(categoryQuery,[req.body.category])
+    //if tenant and staff are in
+    if (!rows[0] && !tenantIn.rows[0]){
         return res.status(stats.status.notfound).send('Unable to create as tenant and staff are not found')
     }
 
     //check for both tenant and staff to be under the same institute 
-    else if(!(rows[0].institution_id === tenantIn[0].institution_id)){
+    else if(!(rows[0].institution_id === tenantIn.rows[0].institution_id)){
         return res.status(stats.status.conflict).send("Both staff and tenant are not in the same institute")
     }
 
     //check if the tenant category also agrees with the category that is passed
-    else if(!(tenantIn[0].category_id === categoryRetrieve[0].category_id)){
+    else if(!(tenantIn[0].category_id === categoryRetrieve.rows[0].category_id)){
         return res.status(stats.status.bad).send("tenant is not in the correct category")
     }
     //new audit insert 
@@ -51,9 +52,9 @@ const createAudit = async(req,res)=>{
 }
 //get non-comp when pressing button to view audit itself, front end to save
 const getNonCompliance = async(req,res)=>{
-    const tenant_id = await pool.query('select tenant_id from tenant where email = $1',[req.body.tenant_email])[0].tenant_id
-    const staff_id = await pool.query('select staff_id from staff where email = $1',[req.body.staff_email])[0].staff_id
-    const noncomp = await pool.query('select noncompliances from new_audit where tenant_id = $1 and staff_id = $2',[tenant_id,staff_id])[0].noncompliances
+    const tenant_id = await pool.query('select tenant_id from tenant where store_name = $1',[req.body.store_name]).rows[0].tenant_id
+    const staff_id = await pool.query('select staff_id from staff where email = $1',[req.body.staff_email]).rows[0].staff_id
+    const noncomp = await pool.query('select noncompliances from new_audit where tenant_id = $1 and staff_id = $2',[tenant_id,staff_id]).rows[0].noncompliances
     if(!tenant_id||staff_id){
         return res.status(stats.status.bad).send("Tenant or staff not in the database");
     }
@@ -63,15 +64,15 @@ const getNonCompliance = async(req,res)=>{
 //retrieve tenant email is the front end daichi
 const ViewuncompletedAudits = async(req,res)=>{
     const signinStaffQuery = 'SELECT * FROM staff WHERE email = $1';
-    const signinTenantQuery = 'SELECT * FROM tenant WHERE email = $1';
+    const signinTenantQuery = 'SELECT * FROM tenant WHERE store_name = $1';
     //const categoryQuery = 'SELECT category_ID from category where category_name = $1'
     //verify the staff accessing the login 
     const {rows} = await pool.query(signinStaffQuery,[req.body.staff_email])
-    const tenantIn = await pool.query(signinTenantQuery,[req.body.tenant_email])
+    const tenantIn = await pool.query(signinTenantQuery,[req.body.store_name]).rows[0]
     //get the category 
 
     //check for both tenant and staff to be under the same institute 
-    if(!(rows[0].institution_id === tenantIn[0].institution_id)){
+    if(!(rows[0].institution_id === tenantIn.institution_id)){
         return res.status(stats.status.conflict).send("Both staff and tenant are not in the same institute")
     }
 
@@ -82,23 +83,24 @@ const ViewuncompletedAudits = async(req,res)=>{
     
     //retrieve all audits with respect to the staff id
     try{
-        const getstaff = await pool.query(queryStaffID,[req.body.Staffemail]);
-        const getaud = await pool.query(queryGetAud,[getstaff[0].staff_id])
+        const getstaff = await (await pool.query(queryStaffID,[req.body.Staffemail]));
+        const getaud = await (await pool.query(queryGetAud,[getstaff.rows[0].staff_id]))
         //get length of the table queried
         const countaud = await pool.query('select count(*) from $1',[getaud])
 
         //send the audit to front end in json for rendering 
-        for(var i = 0;i<countaud[0].count;i++){
+        for(var i = 0;i<countaud.rows[0].count;i++){
             var audit = "audit" + i;
-            const tenant_name = await pool.query('SELECT store_name from tenant where tenant_id = $1',[getaud[i].tenant_id])
-            const category_name = await pool.query('SELECT category_name from category where category_id = $1',[getaud[i].category_id])
-            const inst_name = await pool.query('SELECT institution_name from singhealth_institutions where institution_id = $1',[getaud[i].institution_id])
+            const tenant_name = await (await pool.query('SELECT store_name from tenant where tenant_id = $1',[getaud.rows[i].tenant_id])).rows[0].store_name
+            const category_name = await (await pool.query('SELECT category_name from category where category_id = $1',[getaud.rows[i].category_id])).rows[0].category_name
+            const inst_name = await pool.query('SELECT institution_name from singhealth_institutions where institution_id = $1',[getaud.rows[i].institution_id]).rows[0].institution_name
+
             allAudits[audit] =  {
-                "tenant_name": tenant_name[0],
-                "category": category_name[0],
-                "institution_name": inst_name[0],
-                "noncompliances":getaud[i].noncompliances,
-                "performance_score ": getaud[i].aud_score
+                "tenant_name": tenant_name,
+                "category": category_name,
+                "institution_name": inst_name,
+                "noncompliances":getaud.rows[i].noncompliances,
+                "performance_score ": getaud.rows[i].aud_score
             }
         }
         return res.status(stats.status.successMessage).json(allAudits);
@@ -142,8 +144,8 @@ const pastAudits = async (req,res)=>{
     //staff email -> id 
     //performance score
     //resolved audit date
-    const staff_id = await pool.query('select staff_id from staff where email = $1',[req.body.staff_email])[0].staff_id
-    const startaud_date = await pool.query('select date_record from new_audit where staff_id = $1',[staff_id])[0]
+    const staff_id = await (await pool.query('select staff_id from staff where email = $1',[req.body.staff_email])).rows[0].staff_id
+    //const startaud_date = await pool.query('select date_record from new_audit where staff_id = $1',[staff_id])[0]
     const getPastAud = await pool.query('select * from past_audits where staff_id = $1',[staff_id])
     var returnbody = {
         "staff_name": staff_id.staff_name,
@@ -158,10 +160,10 @@ const pastAudits = async (req,res)=>{
         //get tenant
         const getTenant = await pool.query('select * from tenant where tenant_id = $1',[getPastAud[i].tenant_id])  
         returnbody[staff_name] = {
-            "tenant_name": getTenant[0].tenant_name,
-            "performance_score": getPastAud[i].aud_score,
-            "resolved_aud_date": getPastAud[i].resolved_audit_date,
-            "start_audit_date": getPastAud[i].audit_date            
+            "tenant_name": getTenant.rows[0].tenant_name,
+            "performance_score": getPastAud.rows[i].aud_score,
+            "resolved_aud_date": getPastAud.rows[i].resolved_audit_date,
+            "start_audit_date": getPastAud.rows[i].audit_date            
         }
     }
     return res.status(stats.status.success).json(returnbody)
@@ -174,8 +176,10 @@ const pastAudits = async (req,res)=>{
 const resolveAudits = async (req,res)=>{
     //insert into past audits 
     //delete from new audits 
-    const staff_id = await pool.query('select staff_id from staff where email = $1',[req.body.staff_email])[0].staff_id
-    const {rows} = await pool.query('INSERT INTO past_audits(audit_id,aud_score,tenant_id,audit_date,staff_id, resolved_audit_date) values ($1,$2,$3,$4,$5,$6) returning * ',[req.body.audit_id,req.body.tenant_id,req.body.audit_date,staff_id,req.body.resolved_aud_date])
+    const staff_id = await pool.query('select staff_id from staff where email = $1',[req.body.staff_email]).rows[0].staff_id
+    const tenant_id = await pool.query('select tenant_id from tenant where store_name = $1',[req.body.store_name]).rows[0].tenant_id
+    const audit = await pool.query('select * from new_audit where tenant_id = $1 and staff_id = $2',[tenant_id,staff_id]).rows[0]
+    const {rows} = await pool.query('INSERT INTO past_audits(audit_id,aud_score,tenant_id,audit_date,staff_id, resolved_audit_date) values ($1,$2,$3,$4,$5,$6) returning * ',[audit.rows[0].Audit_ID,audit.aud_score,tenant_id,audit.audit_date,staff_id,req.body.resolved_aud_date])
     const dbResponse = rows[0]
     if(!dbResponse){
         return res.status(stats.status.notfound).send("Did not manage to resolve audit")
@@ -187,9 +191,9 @@ const resolveAudits = async (req,res)=>{
 //delete all resolved audits
 const delNewAudits = async(req,res)=>{
     const getStaff = await pool.query('select staff_id from staff where email = $1',[req.body.staff_email])
-    const getTenant = await pool.query('select tenant_id from tenant where email = $1',[req.body.tenant_email])
-    const removeAudit = await pool.query('delete from new_audit where tenant_id = $1 and staff_id = $2 returning * ',[getStaff[0].staff_id, getTenant[0].tenant_id])
-    if(!removeAudit[0]){
+    const getTenant = await pool.query('select tenant_id from tenant where store_name = $1',[req.body.store_name])
+    const removeAudit = await pool.query('delete from new_audit where tenant_id = $1 and staff_id = $2 returning * ',[getStaff.rows[0].staff_id, getTenant.rows[0].tenant_id])
+    if(!removeAudit.rows[0]){
         return res.status(stats.status.nocontent).send("cannot resolve the audit")
     }
     return res.status(stats.status.success).send(stats.successMessage)
@@ -199,18 +203,19 @@ const delNewAudits = async(req,res)=>{
 //name 
 //audit score previous audit date 
 const getTenantDeets = async(req,res)=>{
-    const getaudit1 = await pool.query('select * from past_audits as getaud where institution_id = $1',[req.body.institution_id])
+    const inst_id = await pool.query('select institution_id from singhealth_institutions where institution_name = $1',[req.body.institution_name]).rows[0].institution_id
+    const getaudit1 = await pool.query('select * from past_audits as getaud where institution_id = $1',[inst_id])
     //two for loops for json 
-    const countnew_aud = await pool.query('select count(*) from $1',[getaudit1])[0].count
+    const countnew_aud = await pool.query('select count(*) from $1',[getaudit1]).rows[0].count
 
     //json object 
     var tenantdeets = {}
     for(var i = 0; i < countnew_aud ;i++){
         //retrieve the tenant name 
-        const tenantname = await pool.query('select tenant_name from tenant where tenant_id = $1',[getaudit1[i].tenant_id])[0].tenant_name
+        const tenantname = await pool.query('select store_name from tenant where tenant_id = $1',[getaudit1.rows[i].tenant_id])[0].store_name
         tenantdeets[tenantname] = {
-            "audit_performance_score": getaudit1[i].aud_score,
-            "previous_audit_date": getaudit1[i].resolved_audit_date
+            "audit_performance_score": getaudit1.rows[i].aud_score,
+            "previous_audit_date": getaudit1.rows[i].resolved_audit_date
         }
     }
     return res.status(stats.status.success).json(tenantdeets)

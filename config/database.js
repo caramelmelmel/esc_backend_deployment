@@ -12,16 +12,22 @@ const pool = new Pool({
 */
 const Pool = require('pg').Pool
 
-const devConfig = `postgresql://${process.env.PG_USER}:${process.env.PG_PASSWORD}@${process.env.PG_HOST}:${process.env.DB_PORT}/${process.env.PG_DATABASE}`
+const devConfig = new Pool({
+	host: process.env.DB_HOST,
+	user: process.env.DB_USER,
+	password: process.env.DB_PASSWORD,
+	port: process.env.DB_PORT,
+	database: process.env.DB_DATABASE
+  });
 
 const proConfig = process.env.DATABASE_URL
 
 
-const pool = new Pool({
+/*const pool = new Pool({
 	connectionString: process.env.NODE_ENV === 'production' ? proConfig : devConfig
-})
+})*/
 
 
 
 
-module.exports = pool
+module.exports = devConfig

@@ -2,7 +2,7 @@ const moment = require('moment');
 const pool = require('../config/database')
 console.log('imported pool successfully')
 //const dbQuery = require('../database/dev/dbQuery')
-console.log('dbQuery has no import errors')
+//console.log('dbQuery has no import errors')
 const validate = require('../helpers/validations');
 const stats = require('../helpers/status')
 const jwt = require('jsonwebtoken')
@@ -19,43 +19,83 @@ const createTenant = async (req,res)=>{
 
     //get from front end
     console.log(req.body);
+    console.log(`${req.body.email}`)
+    console.log(`${req.body.tenant_name}`)
+    console.log(`${req.body.email}`)
+    console.log(`${req.body.email}`)
+    console.log(`${req.body.email}`)
+    console.log(`${req.body.email}`)
+    
     //     tenant_name,category,store_des,email,expiry_date,password,store_name,institution_name
     // } = req.body;
     
     const created_on = moment(new Date()).format("YYYY-MM-DD");
     console.log(`${created_on}`)
-
+    console.log("6hello0")  
+      
     //THIS PART WORKS
-    if (validate.isEmpty(req.body.email) || validate.isEmpty(req.body.tenant_name) || validate.isEmpty(req.body.category_name) || validate.isEmpty(req.body.password) || validate.isEmpty(req.body.store_des)|| validate.isEmpty(req.body.expiry_date)||validate.isEmpty(req.body.store_name)||validate.isEmpty(req.body.institution_name)) {
-        stats.errorMessage.error = 'All the fields must be filled in';
+    if (validate.isEmpty(req.body.email) || 
+    validate.isEmpty(req.body.tenant_name) || 
+    validate.isEmpty(req.body.category) || 
+    validate.isEmpty(req.body.password) || 
+    validate.isEmpty(req.body.store_des)|| 
+    validate.isEmpty(req.body.expiry_date)||
+    validate.isEmpty(req.body.store_name)||
+    validate.isEmpty(req.body.institution_name)) {
+      console.log("hello1")  
+      stats.errorMessage.error = 'All the fields must be filled in';
+      console.log("hello2")  
+      
         return res.status(stats.status.bad).send(stats.errorMessage);
       }
+      console.log("hello3")  
+      
       if (!validate.isValidEmail(req.body.email)) {
+        console.log("hello4")  
+      
         stats.errorMessage.error = 'Please enter a valid Email';
+        console.log("hello5")  
+      
         return res.status(stats.status.bad).send(stats.errorMessage);
       }
+      console.log("hello6")  
+      
       if (!validate.validatePassword(req.body.password)) {
+        console.log("hello7")  
+      
         stats.errorMessage.error = 'Password must be more than 8 characters';
+        console.log("hello8")  
+      
         return res.status(stats.status.bad).send(stats.errorMessage);
       }
+      console.log("hello9")  
+      
       const hashedPassword = validate.hashPassword(req.body.password);
+      console.log("hello10")  
+      
       //query to insert tenant on success
-      const createTenantQuery = `INSERT INTO tenant(tenant_name,category_ID, store_des,email, expiry_date,password,institution_id)
-                                values($1, $2, $3, $4, $5, $6, $7) returning *`
+      const createTenantQuery = `INSERT INTO tenant(tenant_name,category_ID, store_des,email, exp_date,password,institution_id,store_name)
+                                values($1, $2, $3, $4, $5, $6, $7,$8) returning *`
       
       // need to return category ID
-
+      console.log("hello11")  
+      
     const result = await pool.query('select institution_id from singhealth_institutions where institution_name = $1', [req.body.institution_name]);
-
+    console.log("hello12")  
+      
     const instid= result.rows[0].institution_id
-
+    console.log("hello13")  
+      
     //console.log(`${req.body.category_name}`)
-    const result2 = await pool.query('select category_id from category where category_name = $1', [req.body.category_name]);
-
+    const result2 = await pool.query('select category_id from category where category_name = $1', [req.body.category]);
+    console.log("hello14")  
+      
     const categoryID = result2.rows[0].category_id
-
+    console.log("hello15")  
+      
     console.log(`${categoryID}`)
-
+    console.log("hello16")  
+      
       //need to return the s
       const values = [
         req.body.tenant_name,
@@ -64,8 +104,10 @@ const createTenant = async (req,res)=>{
         req.body.email,
         req.body.expiry_date,
         hashedPassword,
-        instid
+        instid,
+        req.body.store_name
       ]
+
       console.log('query selected successfully')
       console.log('before try') 
 
@@ -144,10 +186,12 @@ const signinTenant = async (req, res) => {
     }
 
     const body = {
+      tenant:{
       id: dbResponse.tenant_id,
       email: dbResponse.email,
       category_id: dbResponse.category_ID,
       institution_id: dbResponse.institution_id
+      }
     }
 
     const token =  jwt.sign(body, process.env.TENANT_TOKEN_SECRET, {

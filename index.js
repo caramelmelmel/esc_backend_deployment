@@ -43,11 +43,12 @@ console.log('imported routes')
 //8081 is to listen
 app.use(cors())
 app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({extended: true}))
+app.use(bodyParser.urlencoded({extended: false}))
 
 // parse requests of content-type - application/x-www-form-urlencoded
 // Add middleware for parsing URL encoded bodies (which are usually sent by browser)
 //tenant routes
+
 app.use('/tenant',tenant);
 app.use('/staff',staff);
 app.use('/audit',audit);
@@ -64,6 +65,10 @@ app.use(helmet())
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
+})
+
+app.get('/',(req,res)=>{
+  res.send("YAY IT WORKS")
 })
 
 // catch 404 and forward to error handler

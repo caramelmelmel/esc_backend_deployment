@@ -119,9 +119,11 @@ const signinStaff = async (req, res) => {
     }
     delete dbResponse.password;
     const body = {
+      staff:{
       staff_id: dbResponse.staff_id,
       email: dbResponse.email,
       instid:dbResponse.institution_id
+      }
     }
     const token =  jwt.sign({ dbResponse}, process.env.STAFF_TOKEN_SECRET, {
       expiresIn: 86400 // 24 hours

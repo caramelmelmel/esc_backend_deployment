@@ -27,7 +27,8 @@ async function validateToken(token,secret){
 
 //for staff
 const verifyStaff = async (req, res, next) => {
-  const token  = req.body.token;
+  //const token  = req.body.token;
+  const token = req.header("jwt_token");
 
   if (!token) {
     stats.errorMessage.error = 'Token not provided';
@@ -35,7 +36,8 @@ const verifyStaff = async (req, res, next) => {
   }
 
   try {
-    jwt.verify(token, process.env.STAFF_TOKEN_SECRET)
+    req.staff = jwt.verify(token, process.env.STAFF_TOKEN_SECRET).staff
+
     next();
   } catch (error) {
       //auth failed sending message now
@@ -46,7 +48,7 @@ const verifyStaff = async (req, res, next) => {
 
 //for tenant 
 const verifyTenant = async (req, res, next) => {
-  const token  = req.body.token
+  const token  = req.header("jwt_token")
 
   if (!token) {
     stats.errorMessage.error = 'Token not provided';
@@ -54,8 +56,8 @@ const verifyTenant = async (req, res, next) => {
   }
 
   try {
-    const verify_tenant = jwt.verify(token, process.env.TENANT_TOKEN_SECRET);
-    console.log(`${verify_tenant}`)    
+    req.tenant = jwt.verify(token, process.env.TENANT_TOKEN_SECRET);
+    //console.log(`${verify_tenant}`)
     next();
 
   } catch (error) {

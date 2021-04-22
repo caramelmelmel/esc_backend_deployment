@@ -11,14 +11,15 @@ require('dotenv').config();
 
 
 //use the pg pool library 
-const pool = require('../config/database')
+const pool = require('../config/database');
+const { header } = require('express-validator');
 
 //create query function here
 
 const createStaff = async (req,res)=>{
 
-    console.log("inside createTenant");
-    res.send("welcome to staff sign up")
+    console.log("inside createstaff");
+    //res.send("welcome to staff sign up")
 
     //get from front end
     console.log(req.body);
@@ -63,14 +64,16 @@ const createStaff = async (req,res)=>{
         console.log('inserting values')
         const { rows } = await pool.query(createStaffQuery, values)
         console.log('There is db response')
+        console.log('inserting values')
         const dbResponse = rows[0];
+        console.log(`${dbResponse}`)
         delete dbResponse.password;
+        console.log('reached here')
         //const token = generateUserToken(dbResponse.tenant_name,dbResponse.tenant_email,dbResponse.institution_id,dbResponse.password);
         stats.successMessage.data = dbResponse;
+        console.log('reached here 2')
         //stats.successMessage.data.token = token;
-
         return res.status(stats.status.created).send(stats.successMessage);
-
       } catch (error) {
   
         if (error.routine === '_bt_check_unique') {
@@ -125,7 +128,7 @@ const signinStaff = async (req, res) => {
       instid:dbResponse.institution_id
       }
     }
-    const token =  jwt.sign({ dbResponse}, process.env.STAFF_TOKEN_SECRET, {
+    const token =  jwt.sign(body, process.env.STAFF_TOKEN_SECRET, {
       expiresIn: 86400 // 24 hours
     });
 
@@ -134,7 +137,8 @@ const signinStaff = async (req, res) => {
     delete dbResponse.password;
     stats.successMessage.data = dbResponse;
     stats.successMessage.data.token = token;
-    return res.send(token);
+    return res.json({token});
+
   } catch (error) {
     errorMessage.error = 'Operation was not successful';
     return res.status(stats.status.error).send(stats.errorMessage);

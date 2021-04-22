@@ -95,7 +95,7 @@ const createStaff = async (req,res)=>{
    */
 const signinStaff = async (req, res) => {
   const { email, password } = req.body;
-  res.send('welcome to staff login')
+  //res.send('welcome to staff login')
     
   if (validate.isEmpty(email) || validate.isEmpty(password)) {
     stats.errorMessage.error = 'Email or Password detail is missing';

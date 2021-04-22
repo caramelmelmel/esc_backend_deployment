@@ -235,11 +235,12 @@ const resolveAudits = async (req,res)=>{
 
 //only if all noncompliances are resolved
 //delete all resolved audits
-//
+//IT WORKSSS
 const delNewAudits = async(req,res)=>{
     const getStaff = await pool.query('select staff_id from staff where email = $1',[req.body.staff_email])
     const getTenant = await pool.query('select tenant_id from tenant where store_name = $1',[req.body.store_name])
     const removeAudit = await pool.query('delete from new_audit where tenant_id = $1 and staff_id = $2 returning * ',[getStaff.rows[0].staff_id, getTenant.rows[0].tenant_id])
+    console.log('removed successfully')
     if(!removeAudit.rows[0]){
         return res.status(stats.status.nocontent).send("cannot resolve the audit")
     }

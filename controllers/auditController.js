@@ -80,7 +80,7 @@ const getNonCompliance = async(req,res)=>{
 }
 
 //get state
-//TESTING...
+//WORKS
 const ViewuncompletedAudits = async(req,res)=>{
     const signinStaffQuery = 'SELECT * FROM staff WHERE email = $1';
     const signinTenantQuery = 'SELECT * FROM tenant WHERE store_name = $1';
@@ -143,11 +143,10 @@ const ViewuncompletedAudits = async(req,res)=>{
     }
 }
 
-
+//TESTING
+//not in route
 const viewtenantUpdates = async(req,res)=>{
-    //get json 
-    //get tenant_id
-    //get staff_id
+    
     const tenant_id = await pool.query('select tenant_id from tenant where email = $1',[req.body.tenant_email])[0].tenant_id
     const staff_id = await pool.query('select staff_id from staff where email = $1',[req.body.staff_email])[0].staff_id
     const getnoncompliances = await pool.query('select noncompliances from new_audit where staff_id = $1 and tenant_id = $2',[staff_id,tenant_id])[0].noncompliances
@@ -171,34 +170,34 @@ const updateAudit = async(req,res)=>{
 
 //4. past audits (look at staff view)
 //retrieve 
-//TEST THIS
+//IT works
 const pastAudits = async (req,res)=>{
     //tenant name 
     //staff email -> id 
     //performance score
     //resolved audit date
-    const staff_tbl = await pool.query('select staff_id from staff where email = $1',[req.body.staff_email])
-    const staff_id = staff_tbl.rows[0].staff_id
+    const staff_tbl = await pool.query('select * from staff where email = $1',[req.body.staff_email])
+    const staff_n = staff_tbl.rows[0].staff_name
     console.log('hello1')
     //const startaud_date = await pool.query('select date_record from new_audit where staff_id = $1',[staff_id])[0]
-    const getPastAud = await pool.query('select * from past_audits where staff_id = $1',[staff_id])
+    const getPastAud = await pool.query('select * from past_audits where staff_id = $1',[staff_tbl.rows[0].staff_id])
     console.log('Hello2')
-    var returnbody = {
-        "staff_name": staff_id.staff_name,
-
-    }
+    var returnbody = {}
+    //console.log(`${returnbody["staff_name"]}`)
     console.log('Hello3')
     //get length of the table
-    const count_past_aud = await pool.query('select count(*) from past_audits where staff_id = $1',staff_id)
-    console.log('hello 4')
-    const countpaud = count_past_aud.rows[0].count
+    const countpaud = getPastAud.rowCount
     console.log('hello 5')
 
     //add objects to the json
+    var pastaud = 0
     for(var i = 0; i<countpaud;i++){
         //get tenant
-        const getTenant = await pool.query('select * from tenant where tenant_id = $1',[getPastAud[i].tenant_id])  
-        returnbody[staff_name] = {
+        
+        pastaud = "pastaud"+i
+        var getTenant = await pool.query('select * from tenant where tenant_id = $1',[getPastAud[i].tenant_id])  
+        returnbody[pastaud] = {
+            "staff_name":staff_n,
             "tenant_name": getTenant.rows[0].tenant_name,
             "performance_score": getPastAud.rows[i].aud_score,
             "resolved_aud_date": getPastAud.rows[i].resolved_audit_date,
@@ -207,7 +206,6 @@ const pastAudits = async (req,res)=>{
     }
     console.log('it got past the for loop TEEHEE')
     return res.status(stats.status.success).json(returnbody)
-
 
 }
 

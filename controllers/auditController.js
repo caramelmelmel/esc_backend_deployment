@@ -2,7 +2,8 @@
 // THIS FILE IS FOR STAFF ONLY 
 
 const stats = require('../helpers/status')
-const pool = require('../config/database')
+const pool = require('../config/database');
+const { response } = require('express');
 //import the staff and tenant check 
 //const checkStaffTenant = require('../helpers/checkstaffTenant')
 
@@ -215,6 +216,10 @@ const pastAudits = async (req,res)=>{
 const resolveAudits = async (req,res)=>{
     //insert into past audits 
     //delete from new audits 
+    //check the request body format 
+    if(!req.body.resolved_aud_date||req.body.store_name||req.body.staff_email){
+        return res.status(400).send('Please send it in the correct format')
+    }
     console.log('inside the function')
     const staff_tbl = await pool.query('select * from staff where email = $1',[req.body.staff_email])
     const staff_id = staff_tbl.rows[0].staff_id
@@ -223,6 +228,7 @@ const resolveAudits = async (req,res)=>{
 
     const audit = await pool.query('select * from new_audit where tenant_id = $1 and staff_id = $2',[tenant_id,staff_id])
     console.log(`${audit.rows[0].audit_id}`)
+    console.log(`${audit.rows[0].audit_date}`)
     const inst_id = staff_tbl.rows[0].institution_id
     const {rows} = await pool.query('INSERT INTO past_audits(audit_id,aud_score,tenant_id,audit_date,staff_id, resolved_audit_date,institution_id) values ($1,$2,$3,$4,$5,$6,$7) returning * ',[audit.rows[0].audit_id,audit.rows[0].aud_score,tenant_id,audit.rows[0].audit_date,staff_id,req.body.resolved_aud_date,inst_id])
     const dbResponse = rows[0]
@@ -250,18 +256,22 @@ const delNewAudits = async(req,res)=>{
 //tenant details 
 //name 
 //audit score previous audit date 
+//TESTING
 const getTenantDeets = async(req,res)=>{
-    const inst_id = await pool.query('select institution_id from singhealth_institutions where institution_name = $1',[req.body.institution_name]).rows[0].institution_id
-    const getaudit1 = await pool.query('select * from past_audits as getaud where institution_id = $1',[inst_id])
+    const inst_id = await pool.query('select institution_id from singhealth_institutions where institution_name = $1',[req.body.institution_name])
+    const institute_id = inst_id.rows[0].institution_id
+    const getaudit1 = await pool.query('select * from past_audits as getaud where institution_id = $1',[institute_id])
     //two for loops for json 
-    const countnew_aud = await pool.query('select count(*) from $1',[getaudit1]).rows[0].count
+    const countnew_aud = getaudit1.rowCount
+    console.log('Got here!')
 
     //json object 
     var tenantdeets = {}
     for(var i = 0; i < countnew_aud ;i++){
         //retrieve the tenant name 
-        const tenantname = await pool.query('select store_name from tenant where tenant_id = $1',[getaudit1.rows[i].tenant_id])[0].store_name
-        tenantdeets[tenantname] = {
+        var tenantname = await pool.query('select store_name from tenant where tenant_id = $1',[getaudit1.rows[i].tenant_id])
+        var ten_name = tenantname.rows[0].store_name
+        tenantdeets[ten_name] = {
             "audit_performance_score": getaudit1.rows[i].aud_score,
             "previous_audit_date": getaudit1.rows[i].resolved_audit_date
         }

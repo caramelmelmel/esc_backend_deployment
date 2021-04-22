@@ -29,6 +29,7 @@ async function validateToken(token,secret){
 const verifyStaff = async (req, res, next) => {
   //const token  = req.body.token;
   const token = req.header("jwt_token");
+  console.log("inside the verifystaff function")
 
   if (!token) {
     stats.errorMessage.error = 'Token not provided';

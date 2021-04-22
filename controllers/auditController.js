@@ -256,7 +256,7 @@ const delNewAudits = async(req,res)=>{
 //tenant details 
 //name 
 //audit score previous audit date 
-//TESTING
+//DONE
 const getTenantDeets = async(req,res)=>{
     const inst_id = await pool.query('select institution_id from singhealth_institutions where institution_name = $1',[req.body.institution_name])
     const institute_id = inst_id.rows[0].institution_id

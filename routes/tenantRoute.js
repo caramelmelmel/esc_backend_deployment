@@ -5,7 +5,7 @@ console.log('imported router successfully')
 
 const tenantctrller = require('../controllers/tenantController');
 //console.log('tenantcontroller has been imported successfully')
-const vAuth = require('../middleware/verifyAuth').verifyStaff;
+const vAuth = require('../middleware/verifyAuth').verifyTenant;
 //console.log('vAuth is imported successfully')
 const tenantAudCont = require('../controllers/tenantAuditController')
 //console.log('Imported everything successfully')

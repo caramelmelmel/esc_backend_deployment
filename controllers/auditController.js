@@ -10,7 +10,7 @@ const pool = require('../config/database')
 // for the staff route only
 
 //1. create audit 
-
+//THIS WORKS
 const createAudit = async(req,res)=>{
     console.log(`${req.staff}`)
     const signinStaffQuery = 'SELECT * FROM staff WHERE email = $1';
@@ -52,13 +52,19 @@ const createAudit = async(req,res)=>{
 }
 //get non-comp when pressing button to view audit itself, front end to save
 const getNonCompliance = async(req,res)=>{
-    const tenant_id = await pool.query('select tenant_id from tenant where store_name = $1',[req.body.store_name]).rows[0].tenant_id
-    const staff_id = await pool.query('select staff_id from staff where email = $1',[req.body.staff_email]).rows[0].staff_id
-    const noncomp = await pool.query('select noncompliances from new_audit where tenant_id = $1 and staff_id = $2',[tenant_id,staff_id]).rows[0].noncompliances
-    if(!tenant_id||staff_id){
+    //console.log(`${req.body.store_name}`)
+    const tenant_tbl = await pool.query('select tenant_id from tenant where store_name = $1',[req.body.store_name])
+    const tenant_id = tenant_tbl.rows[0].tenant_id
+    //console.log(`${tenant_id}`)
+    const staff_tbl = await pool.query('select staff_id from staff where email = $1',[req.body.staff_email])
+    const staff_id = staff_tbl.rows[0].staff_id
+    //console.log(`${staff_id}`)
+    const noncomp = await pool.query('select noncompliances from new_audit where tenant_id = $1 and staff_id = $2',[tenant_id,staff_id])
+    const non_comp = noncomp.rows[0].noncompliances
+    if(!tenant_id||!staff_id){
         return res.status(stats.status.bad).send("Tenant or staff not in the database");
     }
-    return res.status(stats.status.success).send(noncomp)
+    return res.status(stats.status.success).json(non_comp)
 }
 
 //retrieve tenant email is the front end daichi

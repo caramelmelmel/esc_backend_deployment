@@ -21,10 +21,6 @@ const createTenant = async (req,res)=>{
     console.log(req.body);
     console.log(`${req.body.email}`)
     console.log(`${req.body.tenant_name}`)
-    console.log(`${req.body.email}`)
-    console.log(`${req.body.email}`)
-    console.log(`${req.body.email}`)
-    console.log(`${req.body.email}`)
     
     //     tenant_name,category,store_des,email,expiry_date,password,store_name,institution_name
     // } = req.body;
@@ -133,7 +129,7 @@ const createTenant = async (req,res)=>{
       } catch (error) {
   
         if (error.routine === '_bt_check_unique') {
-          stats.errorMessage.error = 'User with that EMAIL already exist';
+          stats.errorMessage.error = 'User with that EMAIL or store name already exist';
           return res.status(stats.status.conflict).send(stats.errorMessage);
         }
         console.log(error)
@@ -150,16 +146,18 @@ const createTenant = async (req,res)=>{
    * @returns {object} user object
    */
 const signinTenant = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password} = req.body;
   const signedin_on = moment(new Date()).format("YYYY-MM-DD");
   console.log(`${signedin_on}`)
     
   if (validate.isEmpty(email) || validate.isEmpty(password)) {
     stats.errorMessage.error = 'Email or Password detail is missing';
+    console.log("hello0")
     return res.status(stats.status.bad).send(stats.errorMessage);
   }
   if (!validate.isValidEmail(email) || !validate.validatePassword(password)) {
     stats.errorMessage.error = 'Please enter a valid Email or Password';
+    console.log("hello1")
     return res.status(stats.status.bad).send(stats.errorMessage);
   }
 
@@ -170,6 +168,7 @@ const signinTenant = async (req, res) => {
 
     if (!dbResponse) {
       stats.errorMessage.error = 'User with this email does not exist';
+      console.log("tenant not found")
       return res.status(stats.status.notfound).send(stats.errorMessage);
     }
 
@@ -194,15 +193,18 @@ const signinTenant = async (req, res) => {
       }
     }
 
-    const token =  jwt.sign(body, process.env.TENANT_TOKEN_SECRET, {
+    const jwtToken =  jwt.sign(body, process.env.TENANT_TOKEN_SECRET, {
       expiresIn: 86400 // 24 hours
     });
     delete dbResponse.password;
     stats.successMessage.data = dbResponse;
-    stats.successMessage.data.token = token;
-    return res.send(token);
+    //stats.successMessage.data.token = token;
+    //console.log("token is given")
+    //console.log( `${res.status(200).json({token})}`);
+    return res.json({ jwtToken });
     
   } catch (error) {
+    console.log(`${error}`)
     stats.errorMessage.error = 'Operation was not successful';
     return res.status(stats.status.error).send(stats.errorMessage);
   }

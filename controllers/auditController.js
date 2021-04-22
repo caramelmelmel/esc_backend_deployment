@@ -211,21 +211,22 @@ const pastAudits = async (req,res)=>{
 
 //5. resolve audits (send via email)
 //only if all the non compliances are resolved
-//
+//WORKS
 const resolveAudits = async (req,res)=>{
     //insert into past audits 
     //delete from new audits 
     console.log('inside the function')
-    const staff_tbl = await pool.query('select staff_id from staff where email = $1',[req.body.staff_email])
+    const staff_tbl = await pool.query('select * from staff where email = $1',[req.body.staff_email])
     const staff_id = staff_tbl.rows[0].staff_id
     const tenant_tbl = await pool.query('select tenant_id from tenant where store_name = $1',[req.body.store_name])
     const tenant_id = tenant_tbl.rows[0].tenant_id
 
     const audit = await pool.query('select * from new_audit where tenant_id = $1 and staff_id = $2',[tenant_id,staff_id])
     console.log(`${audit.rows[0].audit_id}`)
-    const {rows} = await pool.query('INSERT INTO past_audits(audit_id,aud_score,tenant_id,audit_date,staff_id, resolved_audit_date,institution_id) values ($1,$2,$3,$4,$5,$6,$7) returning * ',[audit.rows[0].Audit_ID,audit.aud_score,tenant_id,audit.rows[0].audit_date,staff_id,req.body.resolved_aud_date])
+    const inst_id = staff_tbl.rows[0].institution_id
+    const {rows} = await pool.query('INSERT INTO past_audits(audit_id,aud_score,tenant_id,audit_date,staff_id, resolved_audit_date,institution_id) values ($1,$2,$3,$4,$5,$6,$7) returning * ',[audit.rows[0].audit_id,audit.rows[0].aud_score,tenant_id,audit.rows[0].audit_date,staff_id,req.body.resolved_aud_date,inst_id])
     const dbResponse = rows[0]
-    console.log(`${dbResponse.Audit_ID}`)
+    console.log(`${dbResponse.audit_id}`)
     if(!dbResponse){
         return res.status(stats.status.notfound).send("Did not manage to resolve audit")
     }

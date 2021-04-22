@@ -80,51 +80,65 @@ const getNonCompliance = async(req,res)=>{
 }
 
 //get state
+//TESTING...
 const ViewuncompletedAudits = async(req,res)=>{
     const signinStaffQuery = 'SELECT * FROM staff WHERE email = $1';
     const signinTenantQuery = 'SELECT * FROM tenant WHERE store_name = $1';
     //const categoryQuery = 'SELECT category_ID from category where category_name = $1'
     //verify the staff accessing the login 
     const {rows} = await pool.query(signinStaffQuery,[req.body.staff_email])
-    const tenantIn = await pool.query(signinTenantQuery,[req.body.store_name]).rows[0]
+    const tenantIn = await pool.query(signinTenantQuery,[req.body.store_name])
     //get the category 
-
+    console.log('hello managed to pass through')
     //check for both tenant and staff to be under the same institute 
-    if(!(rows[0].institution_id === tenantIn.institution_id)){
-        return res.status(stats.status.conflict).send("Both staff and tenant are not in the same institute")
+    if(!(rows[0].institution_id === tenantIn.rows[0].institution_id)){
+        console.log('error here')
+        return res.status(stats.status.bad).send("Both staff and tenant are not in the same institute")
     }
-
-    const queryStaffID = 'select * from staff where email = $1'
+    console.log('no err')
+    const queryStaffID = 'select staff_id from staff where email = $1'
     const queryGetAud = 'SELECT * from new_audit where staff_id = $1'
     //json object
     var allAudits = {}
     
     //retrieve all audits with respect to the staff id
     try{
-        const getstaff = await (await pool.query(queryStaffID,[req.body.Staffemail]));
-        const getaud = await (await pool.query(queryGetAud,[getstaff.rows[0].staff_id]))
+        console.log('inside try')
+        const getstaff = await pool.query(queryStaffID,[req.body.staff_email]);
+        console.log('manage to get staff')
+        const staff = getstaff.rows[0].staff_id
+        console.log(`${staff}`)
+        const getaud = await pool.query(queryGetAud,[staff])
+        console.log('managed to get audit')
         //get length of the table queried
-        const countaud = await pool.query('select count(*) from $1',[getaud])
-
+        //const countaud = await pool.query('select count(*) from $1',[getaud])
+        console.log(`The number of audits is ${getaud.rowCount}`)
         //send the audit to front end in json for rendering 
-        for(var i = 0;i<countaud.rows[0].count;i++){
+        for(var i = 0;i<getaud.rowCount;i++){
             var audit = "audit" + i;
-            const tenant_name = await (await pool.query('SELECT store_name from tenant where tenant_id = $1',[getaud.rows[i].tenant_id])).rows[0].store_name
-            const category_name = await (await pool.query('SELECT category_name from category where category_id = $1',[getaud.rows[i].category_id])).rows[0].category_name
-            const inst_name = await pool.query('SELECT institution_name from singhealth_institutions where institution_id = $1',[getaud.rows[i].institution_id]).rows[0].institution_name
+            const tenant_name = await pool.query('SELECT store_name from tenant where tenant_id = $1',[getaud.rows[i].tenant_id])
+            const store_name = tenant_name.rows[0].store_name
+            console.log('managed to get the store name')
+            const category_name = await pool.query('SELECT category_name from category where category_id = $1',[getaud.rows[i].category_id])
+            const cat_name = category_name.rows[0].category_name
+            const inst_name = await pool.query('SELECT institution_name from singhealth_institutions where institution_id = $1',[getaud.rows[i].institution_id])
+            const inst = inst_name.rows[0].institution_name
+            console.log('fast game')
 
             allAudits[audit] =  {
-                "tenant_name": tenant_name,
-                "category": category_name,
-                "institution_name": inst_name,
+                "store_name": store_name,
+                "category": cat_name,
+                "institution_name": inst,
                 "noncompliances":getaud.rows[i].noncompliances,
                 "performance_score ": getaud.rows[i].aud_score
             }
         }
-        return res.status(stats.status.successMessage).json(allAudits);
+        console.log('passed through for loop')
+        return res.status(stats.status.success).json(allAudits);
     }
     catch(err){
-        return res.status(stats.error).send("Error retrieving from the tenant or staff")
+        console.log(err)
+        return res.status(stats.status.error).send(stats.errorMessage)
 
     }
 }

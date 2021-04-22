@@ -61,7 +61,7 @@ const createAudit = async(req,res)=>{
     }
 }
 //get non-comp when pressing button to view audit itself, front end to save
-//WORKS
+//IT WORKS
 const getNonCompliance = async(req,res)=>{
     //console.log(`${req.body.store_name}`)
     const tenant_tbl = await pool.query('select tenant_id from tenant where store_name = $1',[req.body.store_name])
@@ -75,6 +75,7 @@ const getNonCompliance = async(req,res)=>{
     if(!tenant_id||!staff_id){
         return res.status(stats.status.bad).send("Tenant or staff not in the database");
     }
+    console.log(`${non_comp}`)
     return res.status(stats.status.success).json(non_comp)
 }
 

@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 
 //import the staff verification
-const verify = require('../middleware/verifyAuth').verifyStaff
+const verify = require('../middleware/verifyAuth')
 
 
 //POST functions

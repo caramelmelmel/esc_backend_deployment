@@ -12,7 +12,7 @@ const pool = require('../config/database')
 //1. create audit 
 
 const createAudit = async(req,res)=>{
-    console.log(`${req.body}`)
+    console.log(`${req.staff}`)
     const signinStaffQuery = 'SELECT * FROM staff WHERE email = $1';
     const signinTenantQuery = 'SELECT * FROM tenant WHERE store_name = $1';
     const categoryQuery = 'SELECT category_ID from category where category_name = $1'
@@ -32,13 +32,13 @@ const createAudit = async(req,res)=>{
     }
 
     //check if the tenant category also agrees with the category that is passed
-    else if(!(tenantIn[0].category_id === categoryRetrieve.rows[0].category_id)){
+    else if(!(tenantIn.rows[0].category_id === categoryRetrieve.rows[0].category_id)){
         return res.status(stats.status.bad).send("tenant is not in the correct category")
     }
     //new audit insert 
-    const crNewAuditQuery = 'INSERT INTO new_audit (aud_score,date_record,inst_id,category_ID,tenant_id,staff_id,noncompliances) values ($1, $2,$3,$4,$5,$6,$7) RETURNING *'
+    const crNewAuditQuery = 'INSERT INTO new_audit (aud_score,date_record,institution_id,category_ID,tenant_id,staff_id,noncompliances) values ($1, $2,$3,$4,$5,$6,$7) RETURNING *'
     try{
-    const crNewAudit = await pool.query(crNewAuditQuery,[req.body.performancescore,req.body.date,rows[0].institution_id,rows[0].category_id,tenantIn[0].tenant_id,rows[0].staff_id,req.body.non_compliances])
+    const crNewAudit = await pool.query(crNewAuditQuery,[req.body.performancescore,req.body.date,rows[0].institution_id,rows[0].category_id,tenantIn.rows[0].tenant_id,rows[0].staff_id,req.body.non_compliances])
 
     //insert properly check 
     stats.successMessage.data = crNewAudit

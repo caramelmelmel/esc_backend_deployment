@@ -42,7 +42,7 @@ const audit = require('./routes/auditRoute')
 console.log('imported routes')
 //8081 is to listen
 app.use(cors())
-app.use(bodyParser.json())
+app.use(bodyParser.json({limit:'100 mb'}))
 app.use(bodyParser.urlencoded({extended: false}))
 
 // parse requests of content-type - application/x-www-form-urlencoded

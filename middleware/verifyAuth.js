@@ -42,7 +42,7 @@ const verifyStaff = async (req, res, next) => {
   } catch (error) {
       //auth failed sending message now
     stats.errorMessage.error = 'Authentication Failed';
-    return res.status(stats.status.unauthorized).send(errorMessage);
+    return res.status(stats.status.unauthorized).send(stats.errorMessage);
   }
 };
 
@@ -63,7 +63,7 @@ const verifyTenant = async (req, res, next) => {
   } catch (error) {
       //auth failed sending message now
     stats.errorMessage.error = 'Authentication Failed';
-    return res.status(stats.status.unauthorized).send(errorMessage);
+    return res.status(stats.status.unauthorized).send(stats.errorMessage);
   }
 };
 

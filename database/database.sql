@@ -17,7 +17,7 @@ DROP TABLE IF EXISTS stores cascade ;
 
 CREATE TABLE stores(
     store_id serial primary key,
-    store_name text
+    store_name text not null
 );
 
 CREATE TABLE singhealth_institutions(
@@ -35,7 +35,7 @@ CREATE TABLE category(
 CREATE TABLE checklistfb(
     fb_id serial PRIMARY KEY,
     category_ID integer references category
-    ON DELETE CASCADE,
+    ON DELETE CASCADE not null,
     fb_cat_name text unique not null
 );
 
@@ -62,7 +62,7 @@ CREATE TABLE staff(
 CREATE TABLE tenant(
     tenant_id serial PRIMARY KEY, 
     tenant_name varchar(50),
-    category_ID integer,
+    category_ID integer ,
     store_des VARCHAR(250),
     email TEXT UNIQUE NOT NULL,
     CONSTRAINT fk_cat
@@ -82,16 +82,16 @@ CREATE TABLE new_audit(
     Audit_ID serial PRIMARY KEY,
     aud_score integer,
     date_record date, 
-    institution_id integer references singhealth_institutions,
+    institution_id integer not null references singhealth_institutions,
     category_ID integer,
     CONSTRAINT fk_cat
     FOREIGN KEY(category_ID)
         REFERENCES category(category_ID)
         ON DELETE CASCADE,
-    tenant_id integer references tenant,
-    staff_id integer references staff,
+    tenant_id integer not null references tenant,
+    staff_id integer not null references staff,
 
-    noncompliances json,
+    noncompliances json not null ,
     update_date date
 );
 
@@ -122,15 +122,14 @@ CREATE TABLE audit_in_progress(
 );
 
 CREATE TABLE past_audits(
-    audit_id integer references new_audit
+    audit_id integer not null,
+    aud_score integer not null,
+    tenant_id integer not null references tenant 
     ON DELETE CASCADE,
-    aud_score integer,
-    tenant_id integer references tenant
-    ON DELETE CASCADE,
-    audit_date date,
-    staff_id integer references staff,
+    audit_date date not null,
+    staff_id integer not null references staff,
     resolved_audit_date date,
-    institution_id integer references singhealth_institutions
+    institution_id integer not null references singhealth_institutions
 );
 
 --storage of the image in the blob format

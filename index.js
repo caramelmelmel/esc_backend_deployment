@@ -13,6 +13,8 @@ const bodyParser = require("body-parser");
 const cors = require('cors');
 const dotenv = require('dotenv')
 const port = 3000;
+const cluster = require('cluster')
+const os = require('os')
 
 const app = express()
 //const pool = require('../.config/database')
@@ -52,6 +54,8 @@ app.use(bodyParser.urlencoded({extended: false}))
 app.use('/tenant',tenant);
 app.use('/staff',staff);
 app.use('/audit',audit);
+//check for concurrency
+
 console.log('successfully imported routes')
 
 app.use(compression())
